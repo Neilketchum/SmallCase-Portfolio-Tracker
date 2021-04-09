@@ -21,4 +21,4 @@ const holdingSchema = new mongoose.Schema(
 }
 );
 
-module.exports = mongoose.model('Holding', portfolioSchema);
+module.exports = mongoose.model('Holding', holdingSchema);
