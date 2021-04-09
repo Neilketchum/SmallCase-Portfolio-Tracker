@@ -12,7 +12,6 @@ var termination = chalk.bold.magenta;
 
 //export this function and imported by index.server.js
 module.exports = function () {
-
     mongoose.connect('mongodb+srv://neil:123@cluster0.krfbl.mongodb.net/<dbname>?retryWrites=true&w=majority', {
         useCreateIndex: true,
         useNewUrlParser: true,

@@ -6,6 +6,8 @@ const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const path = require('path')
 const db = require("./config/database")
+const tradeRoutes = require("../src/routes/tradeRoutes")
+const detailRoutes = require("../src/routes/detailRoutes")
 var chalk = require('chalk');
 var connected = chalk.bold.cyan;
 var error = chalk.bold.yellow;
@@ -17,6 +19,8 @@ var corsOptions = {
 }
 app.use(cors(corsOptions))
 app.use(express.json());
+app.use('/api/v1/trades', tradeRoutes)
+app.use('/api/v1/info/', detailRoutes)
 db();
 const PORT = process.env.PORT || 7000
 app.listen(PORT, () => {
