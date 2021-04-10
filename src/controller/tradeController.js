@@ -1,81 +1,95 @@
-const holding = require("../models/Holding");
+const Trades = require("../models/Trades")
 var chalk = require('chalk');
-var connected = chalk.bold.cyan;
-var error = chalk.bold.yellow;
-var disconnected = chalk.bold.red;
-var termination = chalk.bold.magenta;
+var success = chalk.bold.green;
+var error = chalk.bold.red;
 
+const getTotalShares = async (tickerSymbol) => {
+    const trades = await Trades.find({ tickerSymbol });
+    let count = 0;
+    trades.map(trade => {
+
+        if (trade.method === "BUY")
+            count += trade.shares;
+        else if (trade.method === "SELL")
+            count -= trade.shares
+    })
+    console.log(count)
+    return count;
+}
 exports.addTrade = async (req, res) => {
-    console.log(req.body)
     const tickerSymbol = req.body.tickerSymbol;
     const price = req.body.price;
     const shares = req.body.shares;
-    const oldStock = await holding.findOne({ tickerSymbol });
-    // Checking if user is adding on to a exisiting Stock
-    if (oldStock) {
-        let averageBuyPrice = (price * shares + oldStock.shares * oldStock.avgBuyPrice) / (shares + oldStock.shares);
-        //Updating Existing Stock
-        holding.findOneAndUpdate({ tickerSymbol },
-            {
-                tickerSymbol,
-                avgBuyPrice: averageBuyPrice,
-                shares: oldStock.shares + shares
-            }, null, function (err, docs) {
-                if (err) {
-                    console.log(error(err))
-                    return res.status(200).send("Something Looks Wrong Please Try again Later")
-                }
-                else {
-                    console.log(connected("Update Adding Stock Success"))
-                    return res.status(200).send(docs)
-                }
-            });
-    } else {
-        const trade = new holding({
-            tickerSymbol,
-            avgBuyPrice: price,
-            shares
-        })
+    const method = req.body.method;
+    const trade = new Trades({
+        tickerSymbol,
+        price,
+        shares,
+        method
+    })
+    if (method === "BUY") {
         trade.save(function (err, doc, num) {
             if (err) {
-                console.log(err);
+                console.log(error(err));
                 return res.status(400).send(err)
             } else {
+                console.log(success("Adding Trade of BUY Stock Success"))
                 return res.status(200).send(doc)
             }
         });
-    }
-}
-exports.updateTrade = async (req, res) => {
-    const tickerSymbol = req.body.tickerSymbol
-    const oldStock = await holding.findOne({ tickerSymbol });
-    if (oldStock) {
-        //Updating Existing Stock
-        holding.findOneAndUpdate({ tickerSymbol },
-            {
-                tickerSymbol,
-                avgBuyPrice: req.body.price,
-                shares: req.body.shares
-            }, null, function (err, docs) {
+    } else if (method === "SELL") {
+        const count = await getTotalShares(tickerSymbol)
+        if (count < shares) {
+            console.log(error("Cannot sell stock which you dont own"))
+            return res.status(401).send("Cannot sell stock which you dont own")
+        }
+        else {
+            trade.save(function (err, doc, num) {
                 if (err) {
-                    console.log(error(err))
-                    return res.status(200).send("Something Looks Wrong Please Try again Later")
-                }
-                else {
-                    console.log(connected("Update Stock Success"))
-                    return res.status(200).send(docs)
+                    console.log(error(err));
+                    return res.status(400).send(err)
+                } else {
+                    console.log(success("Adding Trade of SELL Stock Success"))
+                    return res.status(200).send(doc)
                 }
             });
-    } else {
-        //If No Stock with given Ticker Symbol Exists
-        console.log(error("No Stock with " + tickerSymbol + " exists on your Porfolio"))
-        return res.status(401).send(`No Stock with ticker Symbol ${tickerSymbol} exists on your Portfolio`)
+
+        }
     }
 
+
 }
-exports.sellTrade = (req, res) => {
-    console.log("add Trade api")
-    res.status(200).json({
-        "Message": "Sell Trade"
-    })
+
+exports.updateTrade = async (req, res) => {
+    const tradeId = req.params['id'];
+    const trade = await Trades.findById(tradeId);
+    console.log(trade)
+    if (trade) {
+        const count = await getTotalShares(tickerSymbol);
+
+    } else {
+        return res.status(401).send("No Trade with given ID exists");
+    }
+}
+exports.removeTrade = async (req, res) => {
+    const tradeId = req.params['id'];
+    const trade = await Trades.findById(tradeId);
+    console.log(trade)
+    if (trade) {
+        if (trade.method === "BUY") {
+            const count = await getTotalShares(trade.tickerSymbol);
+            if (count > trade.shares) {
+                const result = await Trades.findByIdAndDelete(tradeId)
+                return res.status(200).send(result)
+            } else {
+                return res.status(401).send("Cannot Delete Trade as deleting this trade will result in selling more stocks than you own")
+            }
+        }
+        if (trade.method === "SELL") {
+            const result = await Trades.findByIdAndDelete(tradeId)
+            return res.status(200).send(result)
+        }
+    } else {
+        return res.status(401).send("No Trade with given ID exists");
+    }
 }
