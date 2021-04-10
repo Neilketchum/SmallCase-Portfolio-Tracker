@@ -1,8 +1,5 @@
 const holding = require("../models/Holding");
 var chalk = require('chalk');
-
-
-
 var connected = chalk.bold.cyan;
 var error = chalk.bold.yellow;
 var disconnected = chalk.bold.red;
@@ -16,16 +13,17 @@ exports.addTrade = async (req, res) => {
     const oldStock = await holding.findOne({ tickerSymbol });
     // Checking if user is adding on to a exisiting Stock
     if (oldStock) {
-        let averagBuyPrice = (price * shares + oldStock.shares * oldStock.avgBuyPrice) / (shares + oldStock.shares);
+        let averageBuyPrice = (price * shares + oldStock.shares * oldStock.avgBuyPrice) / (shares + oldStock.shares);
         //Updating Existing Stock
         holding.findOneAndUpdate({ tickerSymbol },
             {
                 tickerSymbol,
-                avgBuyPrice: averagBuyPrice,
+                avgBuyPrice: averageBuyPrice,
                 shares: oldStock.shares + shares
             }, null, function (err, docs) {
                 if (err) {
                     console.log(error(err))
+                    return res.status(200).send("Something Looks Wrong Please Try again Later")
                 }
                 else {
                     console.log(connected("Update Adding Stock Success"))
@@ -48,11 +46,32 @@ exports.addTrade = async (req, res) => {
         });
     }
 }
-exports.updateTrade = (req, res) => {
-    console.log("update Trade api")
-    res.status(200).json({
-        "Message": "Update Trade"
-    })
+exports.updateTrade = async (req, res) => {
+    const tickerSymbol = req.body.tickerSymbol
+    const oldStock = await holding.findOne({ tickerSymbol });
+    if (oldStock) {
+        //Updating Existing Stock
+        holding.findOneAndUpdate({ tickerSymbol },
+            {
+                tickerSymbol,
+                avgBuyPrice: req.body.price,
+                shares: req.body.shares
+            }, null, function (err, docs) {
+                if (err) {
+                    console.log(error(err))
+                    return res.status(200).send("Something Looks Wrong Please Try again Later")
+                }
+                else {
+                    console.log(connected("Update Stock Success"))
+                    return res.status(200).send(docs)
+                }
+            });
+    } else {
+        //If No Stock with given Ticker Symbol Exists
+        console.log(error("No Stock with " + tickerSymbol + " exists on your Porfolio"))
+        return res.status(401).send(`No Stock with ticker Symbol ${tickerSymbol} exists on your Portfolio`)
+    }
+
 }
 exports.sellTrade = (req, res) => {
     console.log("add Trade api")
