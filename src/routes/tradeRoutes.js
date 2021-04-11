@@ -1,8 +1,11 @@
 const express = require('express')
 const router = express.Router();
 const tradeController = require("../controller/tradeController")
-router.post('/update-trade/:id', tradeController.updateTrade)
+const validator = require('express-joi-validation').createValidator({})
+const valid = require("../validators/validator")
+
+router.post('/update-trade/:id', validator.body(valid), tradeController.updateTrade)
 router.post('/remove-trades/:id', tradeController.removeTrade)
-router.post('/add-trade', tradeController.addTrade)
+router.post('/add-trade', validator.body(valid), tradeController.addTrade)
 
 module.exports = router

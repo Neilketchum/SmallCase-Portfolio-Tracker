@@ -2,7 +2,8 @@ const Joi = require('joi');
 
 module.exports = Joi.object({
     tickerSymbol: Joi.string().required(),
-    buyPrice: Joi.number()
+    method: Joi.string().valid('BUY', 'SELL').required(),
+    price: Joi.number()
         .min(0)
         .required(),
     shares: Joi.number()
