@@ -10,13 +10,7 @@ const tradeRoutes = require("../src/routes/tradeRoutes")
 const detailRoutes = require("../src/routes/detailRoutes")
 const swaggerUi = require('swagger-ui-express')
 const swaggerDocument = require('./swagger.json');
-
-
-var chalk = require('chalk');
-var connected = chalk.bold.cyan;
-var error = chalk.bold.yellow;
-var disconnected = chalk.bold.red;
-var termination = chalk.bold.magenta;
+const { logger } = require("./utility/chalkLogger")
 var corsOptions = {
     origin: '*',
     optionsSuccessStatus: 200,
@@ -30,5 +24,5 @@ app.use('/api/v1/info/', detailRoutes)
 db();
 const PORT = process.env.PORT || 7000
 app.listen(PORT, () => {
-    console.log(connected("Process", PORT))
+    logger(`PORT is ${PORT}`, "success")
 }) 

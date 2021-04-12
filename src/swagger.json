@@ -1,19 +1,16 @@
 {
     "swagger": "2.0",
     "info": {
-        "version": "1.0.0",
-        "title": "Small Case Backend Assignment",
-        "description": "NODE JS REST API DOC For Portfolio tracker",
-        "author": "Daipayan Hati"
+        "title": "SmallCase Backend Assignment",
+        "description": "Smallcase Portfolio tracker assignment",
+        "version": "0.0.1",
+        "contact": {
+            "email": "daipayanh@gmail.com",
+            "name": "Daipayan Hati"
+        }
     },
     "host": "localhost:7000",
     "basePath": "/api/v1",
-    "tags": [
-        {
-            "name": "Trades",
-            "description": "API for adding,deleting and updating trades in the portfolio"
-        }
-    ],
     "schemes": [
         "http",
         "https"
@@ -25,107 +22,195 @@
         "application/json"
     ],
     "paths": {
-        "/users": {
-            "post": {
-                "tags": [
-                    "Users"
-                ],
-                "description": "Create new user in system",
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "body",
-                        "description": "User that we want to create",
-                        "schema": {
-                            "$ref": "#/definitions/User"
-                        }
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "New user is created",
-                        "schema": {
-                            "$ref": "#/definitions/User"
-                        }
-                    }
-                }
-            },
+        "/info/get-portfolio": {
             "get": {
                 "tags": [
-                    "Users"
+                    "Information"
                 ],
-                "summary": "Get all users in system",
+                "summary": "Fetch Portfolio",
+                "description": "Fetch all Portfolio",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/Users"
+                            "$ref": "#/definitions/ApiResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/users/{userId}": {
-            "parameters": [
-                {
-                    "name": "userId",
-                    "in": "path",
-                    "required": true,
-                    "description": "ID of user that we want to find",
-                    "type": "string"
-                }
-            ],
+        "/info/get-returns": {
             "get": {
                 "tags": [
-                    "Users"
+                    "Information"
                 ],
-                "summary": "Get user with given ID",
+                "summary": "Get Returns",
+                "description": "Get Total Returns, Assuming current price is always Rs. 100 for any security.",
                 "responses": {
                     "200": {
-                        "description": "User is found",
+                        "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/ApiResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
-            },
-            "delete": {
-                "summary": "Delete user with given ID",
+            }
+        },
+        "/info/get-trades": {
+            "get": {
                 "tags": [
-                    "Users"
+                    "Information"
                 ],
+                "summary": "Fetch Trades",
+                "description": "Fetch all trades",
                 "responses": {
                     "200": {
-                        "description": "User is deleted",
+                        "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/ApiResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
-            },
-            "put": {
-                "summary": "Update user with give ID",
+            }
+        },
+        "/trades/add-trade": {
+            "post": {
                 "tags": [
-                    "Users"
+                    "Trades"
                 ],
+                "summary": "Add Trades",
+                "description": "Adding Trade , a trade can have two types that is BUY or SELL. ",
                 "parameters": [
                     {
-                        "name": "user",
                         "in": "body",
-                        "description": "User with new values of properties",
+                        "name": "body",
+                        "description": "Remember you cannot sell stocks you dont own.",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/addUpdateTrades"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User is updated",
+                        "description": "Add Trade Successful",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Fields"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "default": {
+                        "description": "Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/trades/update-trade": {
+            "post": {
+                "tags": [
+                    "Trades"
+                ],
+                "summary": "Upadate Trades",
+                "description": "Updating Trade , a update that will result in a you selling more shares than you own of a security is Not allowed ",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "ID of the trade that needs to be updated",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Remember  a update that will result in a you selling more shares than you own of a security is Not allowed.",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/addUpdateTrades"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Update Trade Successful",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Fields"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "default": {
+                        "description": "Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/trades/remove-trades": {
+            "post": {
+                "tags": [
+                    "Trades"
+                ],
+                "summary": "Remove Trades",
+                "description": "Remove Trade , removing a  trade that will result in a you selling more shares than you own of a security is Not allowed ",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "ID of the trade that needs to be removed",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Remove Trade Successful",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Fields"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "default": {
+                        "description": "Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -133,31 +218,54 @@
         }
     },
     "definitions": {
-        "User": {
+        "addUpdateTrades": {
             "required": [
-                "email",
-                "_id"
+                "tickerSymbol",
+                "shares",
+                "price",
+                "method"
             ],
             "properties": {
-                "_id": {
+                "tickerSymbol": {
                     "type": "string",
-                    "uniqueItems": true
+                    "description": "Uniquer Ticker Symbol of the Security",
+                    "example": "ITC"
                 },
-                "email": {
+                "shares": {
+                    "type": "integer",
+                    "description": "No of Shares involved in the trade",
+                    "example": 12
+                },
+                "price": {
+                    "type": "number",
+                    "description": "Price of one share of the security",
+                    "example": 34.45
+                },
+                "method": {
                     "type": "string",
-                    "uniqueItems": true
-                },
-                "lastName": {
-                    "type": "string"
-                },
-                "firstName": {
-                    "type": "string"
+                    "description": "A trade can be of two method that is BUY or SELL .Remember you cant sell security you dont own",
+                    "example": "BUY"
                 }
             }
         },
-        "Users": {
-            "type": "array",
-            "$ref": "#/definitions/User"
+        "ApiResponse": {
+            "properties": {
+                "response-body": {
+                    "type": "object"
+                }
+            }
+        },
+        "ErrorResponse": {
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "description": "A message expressing the error"
+                }
+            }
         }
+    },
+    "externalDocs": {
+        "description": "Find out more about Daipayan Hati",
+        "url": "https://github.com/Neilketchum"
     }
 }

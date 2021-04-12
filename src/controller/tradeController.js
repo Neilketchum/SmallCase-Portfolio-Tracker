@@ -1,30 +1,8 @@
 const Trades = require("../models/Trades")
-var chalk = require('chalk');
-var success = chalk.bold.green;
-var error = chalk.bold.red;
-const ObjectId = require('mongoose').Types.ObjectId;
-function isValidObjectId(id) {
+const { logger } = require("../utility/chalkLogger")
 
-    if (ObjectId.isValid(id)) {
-        if ((String)(new ObjectId(id)) === id)
-            return true;
-        return false;
-    }
-    return false;
-}
-const getTotalShares = async (tickerSymbol) => {
-    const trades = await Trades.find({ tickerSymbol });
-    let count = 0;
-    trades.map(trade => {
+const { getTotalShares, getTotalBuyShares, isValidObjectId } = require("../utility/controllerhelper")
 
-        if (trade.method === "BUY")
-            count += trade.shares;
-        else if (trade.method === "SELL")
-            count -= trade.shares
-    })
-    console.log(count)
-    return count;
-}
 exports.addTrade = async (req, res) => {
     const tickerSymbol = req.body.tickerSymbol;
     const price = req.body.price;
@@ -37,28 +15,31 @@ exports.addTrade = async (req, res) => {
         method
     })
     if (method === "BUY") {
+        // Adding Trade type BUY
         trade.save(function (err, doc, num) {
             if (err) {
-                console.log(error(err));
+                logger(err, "error");
                 return res.status(400).send(err)
             } else {
-                console.log(success("Adding Trade of BUY Stock Success"))
+                logger("Adding Trade of BUY Stock Success", "success")
                 return res.status(200).send(doc)
             }
         });
     } else if (method === "SELL") {
         const count = await getTotalShares(tickerSymbol)
         if (count < shares) {
-            console.log(error("Cannot sell stock which you dont own"))
+            // Cannot sell stock which you dont own
+            logger("Cannot sell stock which you dont own", "error")
             return res.status(401).send("Cannot sell stock which you dont own")
         }
         else {
+            // Adding Trade type SELL
             trade.save(function (err, doc, num) {
                 if (err) {
-                    console.log(error(err));
+                    logger(err, "error");
                     return res.status(400).send(err)
                 } else {
-                    console.log(success("Adding Trade of SELL Stock Success"))
+                    logger("Adding Trade of SELL Stock Success", "success")
                     return res.status(200).send(doc)
                 }
             });
@@ -70,12 +51,14 @@ exports.addTrade = async (req, res) => {
 }
 
 exports.updateTrade = async (req, res) => {
-    const tradeId = req.params['id'];
+
+    const tradeId = req.query.id;
     if (isValidObjectId(tradeId)) {
         const trade = await Trades.findById(tradeId);
-        console.log(trade)
+
         if (trade) {
             if (req.body.method === "BUY") {
+                // Updating Trade type to BUY so no corner case
                 Trades.findByIdAndUpdate(tradeId, {
                     tickerSymbol: req.body.tickerSymbol,
                     method: "BUY",
@@ -90,7 +73,7 @@ exports.updateTrade = async (req, res) => {
                 })
             } else if (trade.method === "BUY" && req.body.method === "SELL") {
                 const count = await getTotalShares(req.body.tickerSymbol);
-
+                // Adding Trade type to SELL so we need to make sure the porfolio dosen't end up selling more stock than it owns.
                 if ((count - trade.shares - req.body.shares) > 0) {
                     Trades.findByIdAndUpdate(tradeId, {
                         tickerSymbol: req.body.tickerSymbol,
@@ -136,12 +119,14 @@ exports.updateTrade = async (req, res) => {
 
 }
 exports.removeTrade = async (req, res) => {
-    const tradeId = req.params['id'];
+
+    const tradeId = req.query.id
     if (isValidObjectId(tradeId)) {
         const trade = await Trades.findById(tradeId);
-        console.log(trade)
+
         if (trade) {
             if (trade.method === "BUY") {
+                // Removing Trade of type to SELL so we have to make sure removing a BUY trade wont result us in selling more stocks than we own
                 const count = await getTotalShares(trade.tickerSymbol);
                 if (count > trade.shares) {
                     const result = await Trades.findByIdAndDelete(tradeId)
@@ -151,6 +136,7 @@ exports.removeTrade = async (req, res) => {
                 }
             }
             if (trade.method === "SELL") {
+                // Removing Trade of type to SELL so no corner case
                 const result = await Trades.findByIdAndDelete(tradeId)
                 return res.status(200).send(result)
             }
